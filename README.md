@@ -1,4 +1,7 @@
 # 🎬 Movie Recommender System
+<p align="center"> <img src="https://img.shields.io/badge/Python-3.10-blue?style=for-the-badge&logo=python&logoColor=white" /> <img src="https://img.shields.io/badge/Streamlit-App-red?style=for-the-badge&logo=streamlit&logoColor=white" /> <img src="https://img.shields.io/badge/Machine%20Learning-Content%20Based-orange?style=for-the-badge" /> <img src="https://img.shields.io/badge/TMDB-API-01B4E4?style=for-the-badge&logo=themoviedatabase&logoColor=white" /> </p>
+
+<p align="center"> <img src="https://img.shields.io/badge/Pandas-Data%20Processing-150458?style=for-the-badge&logo=pandas&logoColor=white" /> <img src="https://img.shields.io/badge/Scikit--Learn-ML-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white" /> <img src="https://img.shields.io/badge/GitHub-Version%20Control-181717?style=for-the-badge&logo=github&logoColor=white" /> <img src="https://img.shields.io/badge/Deployment-Streamlit%20Cloud-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" /> </p>
 
 A web-based **Movie Recommendation System** built with Python, Streamlit, and machine learning. The application recommends movies based on content similarity and enriches the recommendations with real-time movie information from **The Movie Database (TMDB) API**, including posters, ratings, genres, descriptions, and trailers.
 
