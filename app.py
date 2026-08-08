@@ -2,9 +2,45 @@ import pickle
 import streamlit as st
 import requests
 import time
+import base64
 
 # Replace with your actual TMDB API key
 TMDB_API_KEY = "502ca94f1328f828ef991f2b66362535"
+
+# ---------------- BACKGROUND VIDEO FUNCTION ----------------
+def add_video_background(video_file="video.mp4"):
+    with open(video_file, "rb") as video:
+        video_bytes = video.read()
+    encoded_video = base64.b64encode(video_bytes).decode()
+
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background: transparent;
+        }}
+        video#bgVideo {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            filter: brightness(35%);
+        }}
+        h1,h2,h3,h4,h5,h6,p,label {{
+            color: white !important;
+        }}
+        </style>
+
+        <video autoplay muted loop id="bgVideo">
+            <source src="data:video/mp4;base64,{encoded_video}" type="video/mp4">
+        </video>
+        """,
+        unsafe_allow_html=True
+    )
+
 
 @st.cache_data(show_spinner=False)
 def load_data():
@@ -12,15 +48,16 @@ def load_data():
     similarity = pickle.load(open('similarity.pkl', 'rb'))
     return movies, similarity
 
+
 @st.cache_data(show_spinner=False)
-def fetch_movie_details_with_trailer(movie_id, retries=3, backoff=1):
+def fetch_movie_details_with_trailer(movie_id, retries=1, backoff=1):
     base_url = f"https://api.themoviedb.org/3/movie/{movie_id}"
     params = {"api_key": TMDB_API_KEY, "language": "en-US"}
 
     for attempt in range(retries):
         try:
             url = base_url + "?append_to_response=videos"
-            response = requests.get(url, params=params, timeout=5)
+            response = requests.get(url, params=params, timeout=1)
             response.raise_for_status()
             data = response.json()
 
@@ -41,13 +78,13 @@ def fetch_movie_details_with_trailer(movie_id, retries=3, backoff=1):
 
             return poster_url, overview, vote_average, release_year, genres, trailer_url
 
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             if attempt < retries - 1:
                 time.sleep(backoff * (2 ** attempt))
                 continue
             else:
-                st.warning(f"Could not fetch details for movie ID {movie_id}. Error: {e}")
                 return None, None, None, None, [], None
+
 
 def recommend(movie, movies, similarity, selected_genres):
     if movie not in movies['title'].values:
@@ -63,17 +100,21 @@ def recommend(movie, movies, similarity, selected_genres):
         title = movies.iloc[i[0]].title
         poster_url, overview, rating, year, genres, trailer_url = fetch_movie_details_with_trailer(movie_id)
 
-        if selected_genres:
-            if not set(selected_genres).intersection(set(genres)):
-                continue
+        if selected_genres and not set(selected_genres).intersection(set(genres)):
+            continue
 
         recommended_movies.append((title, poster_url, overview, rating, year, genres, trailer_url))
+
         if len(recommended_movies) >= 36:
             break
 
     return recommended_movies
 
+
 def main():
+    # ADD BACKGROUND VIDEO HERE
+    add_video_background("video.mp4")
+
     st.header('🎬 Movie Recommender System')
 
     movies, similarity = load_data()
@@ -105,30 +146,28 @@ def main():
             cols = st.columns(3)
             for idx, (title, poster, overview, rating, year, genres, trailer_url) in enumerate(recommendations):
                 with cols[idx % 3]:
-                    with st.container():
-                        if poster:
-                            st.image(poster, width=220)
+                    if poster:
+                        st.image(poster, width=220)
+                    else:
+                        st.write("Poster not available")
+
+                    st.markdown(f"### {title} ({year})")
+                    st.write(overview[:200] + "..." if overview else "No overview available.")
+                    if rating is not None:
+                        st.write(f"⭐ Rating: {rating}/10")
+                    if genres:
+                        st.write("🎞️ Genres: " + ", ".join(genres))
+
+                    with st.expander("Show Trailer"):
+                        if trailer_url:
+                            st.video(trailer_url)
                         else:
-                            st.write("_Poster not available_")
-
-                        st.markdown(f"### {title} ({year})")
-                        st.write(overview[:200] + "..." if overview else "No overview available.")
-                        if rating is not None:
-                            st.write(f"⭐ Rating: {rating}/10")
-                        if genres:
-                            st.write("🎞️ Genres: " + ", ".join(genres))
-
-                        with st.expander("Show Trailer"):
-                            if trailer_url:
-                                st.video(trailer_url, autoplay=True, muted=True, loop=True)
-                            else:
-                                st.write("_Trailer not available_")
-
-                        st.markdown("<br>", unsafe_allow_html=True)
+                            st.write("Trailer not available")
 
             st.markdown("---")
         else:
             st.write("No recommendations found matching your criteria.")
+
 
 if __name__ == '__main__':
     main()
